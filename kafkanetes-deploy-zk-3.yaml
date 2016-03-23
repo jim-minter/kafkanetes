@@ -1,0 +1,200 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: kafkanetes-deploy-zk-3
+
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: kafkanetes-zk-1
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: kafkanetes-zk-1
+    template:
+      metadata:
+        labels:
+          app: kafkanetes-zk
+          deploymentconfig: kafkanetes-zk-1
+      spec:
+        containers:
+        - name: kafkanetes-zk
+          image: kafkanetes
+          command:
+          - bin/zookeeper-server-start-multiple.sh
+          args:
+          - config/zookeeper.properties
+          - kafkanetes-zk
+          - "1"
+          - "3"
+          volumeMounts:
+          - mountPath: /tmp/zookeeper
+            name: zookeeper
+          ports:
+          - containerPort: 2181
+          - containerPort: 2888
+          - containerPort: 3888
+        volumes:
+        - name: zookeeper
+          emptyDir:
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: false
+        containerNames:
+        - kafkanetes-zk
+        from:
+          kind: ImageStream
+          name: kafkanetes
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: kafkanetes-zk-2
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: kafkanetes-zk-2
+    template:
+      metadata:
+        labels:
+          app: kafkanetes-zk
+          deploymentconfig: kafkanetes-zk-2
+      spec:
+        containers:
+        - name: kafkanetes-zk
+          image: kafkanetes
+          command:
+          - bin/zookeeper-server-start-multiple.sh
+          args:
+          - config/zookeeper.properties
+          - kafkanetes-zk
+          - "2"
+          - "3"
+          volumeMounts:
+          - mountPath: /tmp/zookeeper
+            name: zookeeper
+          ports:
+          - containerPort: 2181
+          - containerPort: 2888
+          - containerPort: 3888
+        volumes:
+        - name: zookeeper
+          emptyDir:
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: false
+        containerNames:
+        - kafkanetes-zk
+        from:
+          kind: ImageStream
+          name: kafkanetes
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: kafkanetes-zk-3
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: kafkanetes-zk-3
+    template:
+      metadata:
+        labels:
+          app: kafkanetes-zk
+          deploymentconfig: kafkanetes-zk-3
+      spec:
+        containers:
+        - name: kafkanetes-zk
+          image: kafkanetes
+          command:
+          - bin/zookeeper-server-start-multiple.sh
+          args:
+          - config/zookeeper.properties
+          - kafkanetes-zk
+          - "3"
+          - "3"
+          volumeMounts:
+          - mountPath: /tmp/zookeeper
+            name: zookeeper
+          ports:
+          - containerPort: 2181
+          - containerPort: 2888
+          - containerPort: 3888
+        volumes:
+        - name: zookeeper
+          emptyDir:
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: false
+        containerNames:
+        - kafkanetes-zk
+        from:
+          kind: ImageStream
+          name: kafkanetes
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: kafkanetes-zk-1
+  spec:
+    ports:
+    - name: 2181-tcp
+      port: 2181
+    - name: 2888-tcp
+      port: 2888
+    - name: 3888-tcp
+      port: 3888
+    selector:
+      deploymentconfig: kafkanetes-zk-1
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: kafkanetes-zk-2
+  spec:
+    ports:
+    - name: 2181-tcp
+      port: 2181
+    - name: 2888-tcp
+      port: 2888
+    - name: 3888-tcp
+      port: 3888
+    selector:
+      deploymentconfig: kafkanetes-zk-2
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: kafkanetes-zk-3
+  spec:
+    ports:
+    - name: 2181-tcp
+      port: 2181
+    - name: 2888-tcp
+      port: 2888
+    - name: 3888-tcp
+      port: 3888
+    selector:
+      deploymentconfig: kafkanetes-zk-3
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: kafkanetes-zk
+  spec:
+    ports:
+    - name: 2181-tcp
+      port: 2181
+    - name: 2888-tcp
+      port: 2888
+    - name: 3888-tcp
+      port: 3888
+    selector:
+      app: kafkanetes-zk

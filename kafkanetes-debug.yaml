@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: kafkanetes-debug
+
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: kafkanetes-debug
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: kafkanetes-debug
+    template:
+      metadata:
+        labels:
+          deploymentconfig: kafkanetes-debug
+      spec:
+        containers:
+        - name: kafkanetes-debug
+          image: kafkanetes
+          command:
+          - python
+          args:
+          - -c
+          - import signal; signal.pause()
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: false
+        containerNames:
+        - kafkanetes-debug
+        from:
+          kind: ImageStream
+          name: kafkanetes

@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: kafkanetes-build
+
+objects:
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    name: kafkanetes
+
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    name: kafkanetes
+  spec:
+    strategy:
+      type: Docker
+      dockerStrategy:
+        from:
+          kind: DockerImage
+          name: registry.access.redhat.com/library/rhel:latest
+    source:
+      type: Git
+      git:
+        uri: https://github.com/jim-minter/kafkanetes.git
+    output:
+      to:
+        name: kafkanetes:latest
+        kind: ImageStreamTag
+    triggers:
+    - type: ConfigChange

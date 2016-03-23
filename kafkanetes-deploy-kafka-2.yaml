@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: kafkanetes-deploy-kafka-2
+
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: kafkanetes-kafka-1
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: kafkanetes-kafka-1
+    template:
+      metadata:
+        labels:
+          app: kafkanetes-kafka
+          deploymentconfig: kafkanetes-kafka-1
+      spec:
+        containers:
+        - name: kafkanetes-kafka
+          image: kafkanetes
+          command:
+          - bin/kafka-server-start.sh
+          args:
+          - config/server.properties
+          - --override
+          - zookeeper.connect=kafkanetes-zk
+          - --override
+          - advertised.host.name=kafkanetes-kafka-1
+          - --override
+          - broker.id=0
+          volumeMounts:
+          - mountPath: /tmp/kafka-logs
+            name: kafka-logs
+          ports:
+          - containerPort: 9092
+        volumes:
+        - name: kafka-logs
+          emptyDir:
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: false
+        containerNames:
+        - kafkanetes-kafka
+        from:
+          kind: ImageStream
+          name: kafkanetes
+
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: kafkanetes-kafka-2
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: kafkanetes-kafka-2
+    template:
+      metadata:
+        labels:
+          app: kafkanetes-kafka
+          deploymentconfig: kafkanetes-kafka-2
+      spec:
+        containers:
+        - name: kafkanetes-kafka
+          image: kafkanetes
+          command:
+          - bin/kafka-server-start.sh
+          args:
+          - config/server.properties
+          - --override
+          - zookeeper.connect=kafkanetes-zk
+          - --override
+          - advertised.host.name=kafkanetes-kafka-2
+          - --override
+          - broker.id=1
+          volumeMounts:
+          - mountPath: /tmp/kafka-logs
+            name: kafka-logs
+          ports:
+          - containerPort: 9092
+        volumes:
+        - name: kafka-logs
+          emptyDir:
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: false
+        containerNames:
+        - kafkanetes-kafka
+        from:
+          kind: ImageStream
+          name: kafkanetes
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: kafkanetes-kafka-1
+  spec:
+    ports:
+    - name: 9092-tcp
+      port: 9092
+    selector:
+      deploymentconfig: kafkanetes-kafka-1
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: kafkanetes-kafka-2
+  spec:
+    ports:
+    - name: 9092-tcp
+      port: 9092
+    selector:
+      deploymentconfig: kafkanetes-kafka-2
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: kafkanetes-kafka
+  spec:
+    ports:
+    - name: 9092-tcp
+      port: 9092
+    selector:
+      app: kafkanetes-kafka

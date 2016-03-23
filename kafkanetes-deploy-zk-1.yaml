@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: kafkanetes-deploy-zk-1
+
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    name: kafkanetes-zk
+  spec:
+    replicas: 1
+    selector:
+      deploymentconfig: kafkanetes-zk
+    template:
+      metadata:
+        labels:
+          deploymentconfig: kafkanetes-zk
+      spec:
+        containers:
+        - name: kafkanetes-zk
+          image: kafkanetes
+          command:
+          - bin/zookeeper-server-start.sh
+          args:
+          - config/zookeeper.properties
+          volumeMounts:
+          - mountPath: /tmp/zookeeper
+            name: zookeeper
+          ports:
+          - containerPort: 2181
+        volumes:
+        - name: zookeeper
+          emptyDir:
+    triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: false
+        containerNames:
+        - kafkanetes-zk
+        from:
+          kind: ImageStream
+          name: kafkanetes
+
+- apiVersion: v1
+  kind: Service
+  metadata:
+    name: kafkanetes-zk
+  spec:
+    ports:
+    - name: 2181-tcp
+      port: 2181
+    selector:
+      deploymentconfig: kafkanetes-zk
