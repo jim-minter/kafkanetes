@@ -2,7 +2,12 @@
 
 Run [Apache Kafka](https://kafka.apache.org/) and [Apache ZooKeeper](https://zookeeper.apache.org/) on [OpenShift v3](https://www.openshift.com/).
 
-Proof of concept.
+Proof of concept; builds following architectures:
+
+* 1 ZooKeeper pod <-> 1 Kafka pod
+* 1 ZooKeeper pod <-> 2 Kafka pods
+* 3 ZooKeeper pods <-> 1 Kafka pod
+* 3 ZooKeeper pods <-> 2 Kafka pods
 
 Jim Minter, 24/03/2016
 
@@ -73,6 +78,6 @@ bash-4.2$ bin/kafka-console-consumer.sh --zookeeper kafkanetes-zk:2181 --topic t
 
 ## Notes
 
-* Known issue: with this setup, Kafka advertises itself using a non-qualified domain name, which means that it can only be accessed by clients in the same namespace.
+* Known issue: with this setup, Kafka advertises itself using a non-qualified domain name, which means that it can only be accessed by clients in the same namespace.  Further customisation to changed the announced domain name/port and/or use NodePorts to enable external access should be fairly straightforward.
 
 * The forthcoming Kubernetes ["Pet Set"](https://github.com/kubernetes/kubernetes/pull/18016) functionality should help normalise the templates for 3-pod ZooKeeper and 2-pod Kafka.
