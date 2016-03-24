@@ -7,13 +7,10 @@ MAXID=$4
 
 echo $MYID >/tmp/zookeeper/myid
 for ((i=1; i<=$MAXID; i++)); do
-  if [ $i -eq $MYID ]; then
-    echo server.$i=0.0.0.0:2888:3888
-  else
-    echo server.$i=$PREFIX-$i:2888:3888
-  fi
+  echo server.$i=$PREFIX-$i:2888:3888
 done >>$PROPERTIES
 cat >>$PROPERTIES <<EOF
+quorumListenOnAllIPs=true
 tickTime=2000
 initLimit=10
 syncLimit=5
