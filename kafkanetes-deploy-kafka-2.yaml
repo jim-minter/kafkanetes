@@ -2,33 +2,76 @@ apiVersion: v1
 kind: Template
 metadata:
   name: kafkanetes-deploy-kafka-2
+  annotations:
+    description: 2-pod Kafka
+    tags: messaging,kafka
+
+parameters:
+- name: VOLUME_CAPACITY
+  description: Persistent volume capacity per pod, e.g. 512Mi, 2Gi
+  required: true
+  value: 512Mi
+- name: OBJECT_NAME_PREFIX
+  description: Name prefix for each object created
+  required: true
+  value: kafkanetes-kafka
+- name: ZOOKEEPER_SERVICE
+  description: DNS name of ZooKeeper service
+  required: true
+  value: kafkanetes-zk
+- name: IMAGESTREAM
+  description: Kafkanetes imagestream name
+  required: true
+  value: kafkanetes
 
 objects:
 - apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}-1
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${VOLUME_CAPACITY}
+
+- apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}-2
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${VOLUME_CAPACITY}
+
+- apiVersion: v1
   kind: DeploymentConfig
   metadata:
-    name: kafkanetes-kafka-1
+    name: ${OBJECT_NAME_PREFIX}-1
   spec:
     replicas: 1
     selector:
-      deploymentconfig: kafkanetes-kafka-1
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-1
     template:
       metadata:
         labels:
-          app: kafkanetes-kafka
-          deploymentconfig: kafkanetes-kafka-1
+          app: ${OBJECT_NAME_PREFIX}
+          deploymentconfig: ${OBJECT_NAME_PREFIX}-1
       spec:
         containers:
-        - name: kafkanetes-kafka
-          image: kafkanetes
+        - name: kafkanetes
+          image: ${IMAGESTREAM}
           command:
           - bin/kafka-server-start.sh
           args:
           - config/server.properties
           - --override
-          - zookeeper.connect=kafkanetes-zk
+          - zookeeper.connect=${ZOOKEEPER_SERVICE}
           - --override
-          - advertised.host.name=kafkanetes-kafka-1
+          - advertised.host.name=${OBJECT_NAME_PREFIX}-1
           - --override
           - broker.id=0
           volumeMounts:
@@ -38,43 +81,44 @@ objects:
           - containerPort: 9092
         volumes:
         - name: kafka-logs
-          emptyDir:
+          persistentVolumeClaim:
+            claimName: ${OBJECT_NAME_PREFIX}-1
     triggers:
     - type: ConfigChange
     - type: ImageChange
       imageChangeParams:
         automatic: false
         containerNames:
-        - kafkanetes-kafka
+        - kafkanetes
         from:
           kind: ImageStream
-          name: kafkanetes
+          name: ${IMAGESTREAM}
 
 - apiVersion: v1
   kind: DeploymentConfig
   metadata:
-    name: kafkanetes-kafka-2
+    name: ${OBJECT_NAME_PREFIX}-2
   spec:
     replicas: 1
     selector:
-      deploymentconfig: kafkanetes-kafka-2
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-2
     template:
       metadata:
         labels:
-          app: kafkanetes-kafka
-          deploymentconfig: kafkanetes-kafka-2
+          app: ${OBJECT_NAME_PREFIX}
+          deploymentconfig: ${OBJECT_NAME_PREFIX}-2
       spec:
         containers:
-        - name: kafkanetes-kafka
-          image: kafkanetes
+        - name: kafkanetes
+          image: ${IMAGESTREAM}
           command:
           - bin/kafka-server-start.sh
           args:
           - config/server.properties
           - --override
-          - zookeeper.connect=kafkanetes-zk
+          - zookeeper.connect=${ZOOKEEPER_SERVICE}
           - --override
-          - advertised.host.name=kafkanetes-kafka-2
+          - advertised.host.name=${OBJECT_NAME_PREFIX}-2
           - --override
           - broker.id=1
           volumeMounts:
@@ -84,47 +128,45 @@ objects:
           - containerPort: 9092
         volumes:
         - name: kafka-logs
-          emptyDir:
+          persistentVolumeClaim:
+            claimName: ${OBJECT_NAME_PREFIX}-2
     triggers:
     - type: ConfigChange
     - type: ImageChange
       imageChangeParams:
         automatic: false
         containerNames:
-        - kafkanetes-kafka
+        - kafkanetes
         from:
           kind: ImageStream
-          name: kafkanetes
+          name: ${IMAGESTREAM}
 
 - apiVersion: v1
   kind: Service
   metadata:
-    name: kafkanetes-kafka-1
+    name: ${OBJECT_NAME_PREFIX}-1
   spec:
     ports:
-    - name: 9092-tcp
-      port: 9092
+    - port: 9092
     selector:
-      deploymentconfig: kafkanetes-kafka-1
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-1
 
 - apiVersion: v1
   kind: Service
   metadata:
-    name: kafkanetes-kafka-2
+    name: ${OBJECT_NAME_PREFIX}-2
   spec:
     ports:
-    - name: 9092-tcp
-      port: 9092
+    - port: 9092
     selector:
-      deploymentconfig: kafkanetes-kafka-2
+      deploymentconfig: ${OBJECT_NAME_PREFIX}-2
 
 - apiVersion: v1
   kind: Service
   metadata:
-    name: kafkanetes-kafka
+    name: ${OBJECT_NAME_PREFIX}
   spec:
     ports:
-    - name: 9092-tcp
-      port: 9092
+    - port: 9092
     selector:
-      app: kafkanetes-kafka
+      app: ${OBJECT_NAME_PREFIX}

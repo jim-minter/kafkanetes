@@ -2,31 +2,40 @@ apiVersion: v1
 kind: Template
 metadata:
   name: kafkanetes-build
+  annotations:
+    description: Kafkanetes builder
+    tags: messaging,kafka,zookeeper
+
+parameters:
+- name: SOURCE_REPOSITORY_URL
+  description: The URL of the Git repository with the Kafkanetes Dockerfile
+  required: true
+  value: https://github.com/jim-minter/kafkanetes.git
+- name: OBJECT_NAME_PREFIX
+  description: Name prefix for each object created
+  required: true
+  value: kafkanetes
 
 objects:
 - apiVersion: v1
   kind: ImageStream
   metadata:
-    name: kafkanetes
+    name: ${OBJECT_NAME_PREFIX}
 
 - apiVersion: v1
   kind: BuildConfig
   metadata:
-    name: kafkanetes
+    name: ${OBJECT_NAME_PREFIX}
   spec:
     strategy:
       type: Docker
-      dockerStrategy:
-        from:
-          kind: DockerImage
-          name: registry.access.redhat.com/library/rhel:latest
     source:
       type: Git
       git:
-        uri: https://github.com/jim-minter/kafkanetes.git
+        uri: ${SOURCE_REPOSITORY_URL}
     output:
       to:
-        name: kafkanetes:latest
-        kind: ImageStreamTag
+        kind: ImageStream
+        name: ${OBJECT_NAME_PREFIX}
     triggers:
     - type: ConfigChange

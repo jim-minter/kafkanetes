@@ -2,24 +2,52 @@ apiVersion: v1
 kind: Template
 metadata:
   name: kafkanetes-deploy-zk-1
+  annotations:
+    description: 1-pod ZooKeeper
+    tags: messaging,zookeeper
+
+parameters:
+- name: VOLUME_CAPACITY
+  description: Persistent volume capacity per pod, e.g. 512Mi, 2Gi
+  required: true
+  value: 512Mi
+- name: OBJECT_NAME_PREFIX
+  description: Name prefix for each object created
+  required: true
+  value: kafkanetes-zk
+- name: IMAGESTREAM
+  description: Kafkanetes imagestream name
+  required: true
+  value: kafkanetes
 
 objects:
 - apiVersion: v1
+  kind: PersistentVolumeClaim
+  metadata:
+    name: ${OBJECT_NAME_PREFIX}
+  spec:
+    accessModes:
+    - ReadWriteOnce
+    resources:
+      requests:
+        storage: ${VOLUME_CAPACITY}
+
+- apiVersion: v1
   kind: DeploymentConfig
   metadata:
-    name: kafkanetes-zk
+    name: ${OBJECT_NAME_PREFIX}
   spec:
     replicas: 1
     selector:
-      deploymentconfig: kafkanetes-zk
+      deploymentconfig: ${OBJECT_NAME_PREFIX}
     template:
       metadata:
         labels:
-          deploymentconfig: kafkanetes-zk
+          deploymentconfig: ${OBJECT_NAME_PREFIX}
       spec:
         containers:
-        - name: kafkanetes-zk
-          image: kafkanetes
+        - name: kafkanetes
+          image: ${IMAGESTREAM}
           command:
           - bin/zookeeper-server-start.sh
           args:
@@ -31,25 +59,25 @@ objects:
           - containerPort: 2181
         volumes:
         - name: zookeeper
-          emptyDir:
+          persistentVolumeClaim:
+            claimName: ${OBJECT_NAME_PREFIX}
     triggers:
     - type: ConfigChange
     - type: ImageChange
       imageChangeParams:
         automatic: false
         containerNames:
-        - kafkanetes-zk
+        - kafkanetes
         from:
           kind: ImageStream
-          name: kafkanetes
+          name: ${IMAGESTREAM}
 
 - apiVersion: v1
   kind: Service
   metadata:
-    name: kafkanetes-zk
+    name: ${OBJECT_NAME_PREFIX}
   spec:
     ports:
-    - name: 2181-tcp
-      port: 2181
+    - port: 2181
     selector:
-      deploymentconfig: kafkanetes-zk
+      deploymentconfig: ${OBJECT_NAME_PREFIX}
